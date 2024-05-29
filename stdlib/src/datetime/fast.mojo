@@ -437,17 +437,31 @@ struct DateTime64(Hashable, Stringable):
         return self.to_iso()
 
     # @always_inline("nodebug")
-    fn add(owned self, seconds: Int = 0, m_seconds: Int = 0) -> Self:
+    fn add(
+        owned self,
+        years: Int = 0,
+        days: Int = 0,
+        hours: Int = 0,
+        minutes: Int = 0,
+        seconds: Int = 0,
+        m_seconds: Int = 0,
+    ) -> Self:
         """Add to self.
 
         Args:
+            years: Years.
+            days: Days.
+            hours: Hours.
+            minutes: Minutes.
             seconds: Seconds.
             m_seconds: Miliseconds.
 
         Returns:
             Self.
         """
-        self.m_seconds += seconds * 1000 + m_seconds
+        self.m_seconds += (
+            (((years * 365 + days) * 24 + hours) * 60 + minutes) * 60 + seconds
+        ) * 1000 + m_seconds
         return self
 
     # @always_inline("nodebug")
@@ -930,10 +944,20 @@ struct DateTime32(Hashable, Stringable):
         return self.to_iso()
 
     # @always_inline("nodebug")
-    fn add(owned self, minutes: Int = 0, seconds: Int = 0) -> Self:
+    fn add(
+        owned self,
+        years: Int = 0,
+        days: Int = 0,
+        hours: Int = 0,
+        minutes: Int = 0,
+        seconds: Int = 0,
+    ) -> Self:
         """Add to self.
 
         Args:
+            years: Years.
+            days: Days.
+            hours: Hours.
             minutes: Minutes.
             seconds: Seconds.
 
@@ -941,7 +965,9 @@ struct DateTime32(Hashable, Stringable):
             Self.
         """
 
-        self.minutes += minutes + seconds * 60
+        self.minutes += (
+            ((years * 365 + days) * 24 + hours) * 60 + minutes
+        ) * 60 + seconds
         return self
 
     # @always_inline("nodebug")
@@ -1386,18 +1412,26 @@ struct DateTime16(Hashable, Stringable):
         return self.to_iso()
 
     # @always_inline("nodebug")
-    fn add(owned self, hours: Int = 0, seconds: Int = 0) -> Self:
+    fn add(
+        owned self,
+        days: Int = 0,
+        hours: Int = 0,
+        minutes: Int = 0,
+        seconds: Int = 0,
+    ) -> Self:
         """Add to self.
 
         Args:
+            days: Days.
             hours: Hours.
+            minutes: Minutes.
             seconds: Seconds.
 
         Returns:
             Self.
         """
 
-        self.hours += hours + seconds * 60 * 60
+        self.hours += days * 24 + hours + minutes // 60 + seconds // (60 * 60)
         return self
 
     # @always_inline("nodebug")
@@ -1841,18 +1875,26 @@ struct DateTime8(Hashable, Stringable):
         return self.to_iso()
 
     # @always_inline("nodebug")
-    fn add(owned self, hours: Int = 0, seconds: Int = 0) -> Self:
+    fn add(
+        owned self,
+        days: Int = 0,
+        hours: Int = 0,
+        minutes: Int = 0,
+        seconds: Int = 0,
+    ) -> Self:
         """Add to self.
 
         Args:
+            days: Days.
             hours: Hours.
+            minutes: Minutes.
             seconds: Seconds.
 
         Returns:
             Self.
         """
 
-        self.hours += hours + seconds * 60 * 60
+        self.hours += days * 24 + hours + minutes // 60 + seconds // (60 * 60)
         return self
 
     # @always_inline("nodebug")

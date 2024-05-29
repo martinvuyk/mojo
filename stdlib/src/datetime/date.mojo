@@ -115,7 +115,7 @@ struct Date[
         owned year: Optional[T1] = None,
         owned month: Optional[T2] = None,
         owned day: Optional[T3] = None,
-        owned tz: Self._tz = Self._tz(),
+        owned tz: Optional[Self._tz] = None,
         owned calendar: Calendar = _calendar,
     ):
         """Construct a `DateTime` from valid values.
@@ -132,10 +132,11 @@ struct Date[
             tz: Tz.
             calendar: Calendar.
         """
+        var zone = tz.value()[] if tz else Self._tz()
         self.year = int(year.take()) if year else int(calendar.min_year)
         self.month = int(month.take()) if month else int(calendar.min_month)
         self.day = int(day.take()) if day else int(calendar.min_day)
-        self.tz = tz
+        self.tz = zone
         self.calendar = calendar
 
     @staticmethod
@@ -143,13 +144,14 @@ struct Date[
         years: Int = 0,
         months: Int = 0,
         days: Int = 0,
-        tz: Self._tz = Self._tz(),
+        tz: Optional[Self._tz] = None,
         calendar: Calendar = _calendar,
     ) -> Self:
         """Construct a `Date` from possibly overflowing values."""
-        var d = Self._from_days(days, tz, calendar)
-        var mon = Self._from_months(months, tz, calendar)
-        var y = Self._from_years(years, tz, calendar)
+        var zone = tz.value()[] if tz else Self._tz()
+        var d = Self._from_days(days, zone, calendar)
+        var mon = Self._from_months(months, zone, calendar)
+        var y = Self._from_years(years, zone, calendar)
 
         y.year = 0 if years == 0 else y.year
 
@@ -223,7 +225,7 @@ struct Date[
         Returns:
             Self with tz casted to UTC.
         """
-        alias TZ_UTC = Self._tz()
+        var TZ_UTC = Self._tz()
         if self.tz == TZ_UTC:
             return self
         var new_self = self
@@ -252,7 +254,7 @@ struct Date[
         Returns:
             Self with tz casted to given tz.
         """
-        alias TZ_UTC = Self._tz()
+        var TZ_UTC = Self._tz()
         if tz == TZ_UTC:
             return self
         var maxmin = self.calendar.max_minute
@@ -695,29 +697,31 @@ struct Date[
     @staticmethod
     fn _from_years(
         years: Int,
-        tz: Self._tz = Self._tz(),
+        tz: Optional[Self._tz] = None,
         calendar: Calendar = _calendar,
     ) -> Self:
         """Construct a `Date` from years."""
+        var zone = tz.value()[] if tz else Self._tz()
         var delta = int(calendar.max_year) - years
         if delta > 0:
             if years > int(calendar.min_year):
-                return Self(year=years, tz=tz, calendar=calendar)
+                return Self(year=years, tz=zone, calendar=calendar)
             return Self._from_years(delta)
         return Self._from_years(int(calendar.max_year) - delta)
 
     @staticmethod
     fn _from_months(
         months: Int,
-        tz: Self._tz = Self._tz(),
+        tz: Optional[Self._tz] = None,
         calendar: Calendar = _calendar,
     ) -> Self:
         """Construct a `Date` from months."""
+        var zone = tz.value()[] if tz else Self._tz()
         if months <= int(calendar.max_month):
-            return Self(month=months, tz=tz, calendar=calendar)
+            return Self(month=months, tz=zone, calendar=calendar)
         var y = months // int(calendar.max_month)
         var rest = months % int(calendar.max_month)
-        var dt = Self._from_years(y, tz, calendar)
+        var dt = Self._from_years(y, zone, calendar)
         dt.month = rest
         return dt
 
@@ -726,17 +730,18 @@ struct Date[
         add_leap: Bool = False
     ](
         days: Int,
-        tz: Self._tz = Self._tz(),
+        tz: Optional[Self._tz] = None,
         calendar: Calendar = _calendar,
     ) -> Self:
         """Construct a `Date` from days."""
+        var zone = tz.value()[] if tz else Self._tz()
         var minyear = int(calendar.min_year)
-        var dt = Self(minyear, tz=tz, calendar=calendar)
+        var dt = Self(minyear, tz=zone, calendar=calendar)
         var maxtdays = int(calendar.max_typical_days_in_year)
         var maxposdays = int(calendar.max_possible_days_in_year)
         var years = days // maxtdays
         if years > minyear:
-            dt = Self._from_years(years, tz, calendar)
+            dt = Self._from_years(years, zone, calendar)
         var maxydays = maxposdays if calendar.is_leapyear(dt.year) else maxtdays
         var day = days
         if add_leap:
@@ -747,7 +752,7 @@ struct Date[
         if day > maxydays:
             var y = day // maxydays
             day = day % maxydays
-            var dt2 = Self._from_years(y, tz, calendar)
+            var dt2 = Self._from_years(y, zone, calendar)
             dt.year += dt2.year
         var maxmondays = int(calendar.max_days_in_month(dt.year, dt.month))
         while day > maxmondays:
@@ -762,37 +767,39 @@ struct Date[
         add_leap: Bool = False
     ](
         hours: Int,
-        tz: Self._tz = Self._tz(),
+        tz: Optional[Self._tz] = None,
         calendar: Calendar = _calendar,
     ) -> Self:
         """Construct a `Date` from hours."""
+        var zone = tz.value()[] if tz else Self._tz()
         var h = int(calendar.max_hour)
         if hours <= h:
-            return Self(int(calendar.min_year), tz=tz, calendar=calendar)
+            return Self(int(calendar.min_year), tz=zone, calendar=calendar)
         var d = hours // (h + 1)
-        return Self._from_days[add_leap](d, tz, calendar)
+        return Self._from_days[add_leap](d, zone, calendar)
 
     @staticmethod
     fn _from_minutes[
         add_leap: Bool = False
     ](
         minutes: Int,
-        tz: Self._tz = Self._tz(),
+        tz: Optional[Self._tz] = None,
         calendar: Calendar = _calendar,
     ) -> Self:
         """Construct a `Date` from minutes."""
+        var zone = tz.value()[] if tz else Self._tz()
         var m = int(calendar.max_minute)
         if minutes < m:
-            return Self(int(calendar.min_year), tz=tz, calendar=calendar)
+            return Self(int(calendar.min_year), tz=zone, calendar=calendar)
         var h = minutes // (m + 1)
-        return Self._from_hours[add_leap](h, tz, calendar)
+        return Self._from_hours[add_leap](h, zone, calendar)
 
     @staticmethod
     fn from_seconds[
         add_leap: Bool = False
     ](
         seconds: Int,
-        tz: Self._tz = Self._tz(),
+        tz: Optional[Self._tz] = None,
         calendar: Calendar = _calendar,
     ) -> Self:
         """Construct a `Date` from seconds.
@@ -809,8 +816,9 @@ struct Date[
         Returns:
             Self.
         """
+        var zone = tz.value()[] if tz else Self._tz()
         var minutes = seconds // (int(calendar.max_typical_second) + 1)
-        var dt = Self._from_minutes(minutes, tz, calendar)
+        var dt = Self._from_minutes(minutes, zone, calendar)
         if not add_leap:
             return dt
         var max_second = calendar.max_second(
@@ -823,12 +831,12 @@ struct Date[
             )
             numerator += int(leapsecs)
         var m = numerator // (int(max_second) + 1)
-        return Self._from_minutes(m, tz, calendar)
+        return Self._from_minutes(m, zone, calendar)
 
     @staticmethod
     fn from_unix_epoch[
         add_leap: Bool = False
-    ](seconds: Int, tz: Self._tz = Self._tz(),) -> Self:
+    ](seconds: Int, tz: Optional[Self._tz] = None,) -> Self:
         """Construct a `Date` from the seconds since the Unix Epoch
         1970-01-01. Adding the cumulative leap seconds since 1972
         to the given date.
@@ -844,12 +852,14 @@ struct Date[
         Returns:
             Self.
         """
-        return Self.from_seconds[add_leap](seconds, tz=tz, calendar=UTCCalendar)
+        var zone = tz.value()[] if tz else Self._tz()
+        return Self.from_seconds[add_leap](
+            seconds, tz=zone, calendar=UTCCalendar
+        )
 
     @staticmethod
     fn now(
-        tz: Self._tz = Self._tz(),
-        calendar: Calendar = _calendar,
+        tz: Optional[Self._tz] = None, calendar: Calendar = _calendar
     ) -> Self:
         """Construct a date from `time.now()`.
 
@@ -860,8 +870,9 @@ struct Date[
         Returns:
             Self.
         """
+        var zone = tz.value()[] if tz else Self._tz()
         var s = time.now() // 1_000_000_000
-        return Date.from_unix_epoch(s, tz).replace(calendar=calendar)
+        return Date.from_unix_epoch(s, zone).replace(calendar=calendar)
 
     fn strftime[format_str: StringLiteral](self) -> String:
         """Formats time into a `String`.
@@ -913,7 +924,7 @@ struct Date[
     @parameter
     fn strptime[
         format_str: StringLiteral,
-        tz: Self._tz = Self._tz(),
+        tz: Optional[Self._tz] = None,
         calendar: Calendar = _calendar,
     ](s: String) -> Optional[Self]:
         """Parse a `Date` from a  `String`.
@@ -929,11 +940,12 @@ struct Date[
         Returns:
             An Optional Self.
         """
+        var zone = tz.value()[] if tz else Self._tz()
         var parsed = dt_str.strptime[format_str](s)
         if not parsed:
             return None
         var p = parsed.take()
-        return Self(p.year, p.month, p.day, tz, calendar)
+        return Self(p.year, p.month, p.day, zone, calendar)
 
     @staticmethod
     @parameter
@@ -976,7 +988,7 @@ struct Date[
     @staticmethod
     fn from_hash(
         value: UInt32,
-        tz: Self._tz = Self._tz(),
+        tz: Optional[Self._tz] = None,
         calendar: Calendar = _calendar,
     ) -> Self:
         """Construct a `Date` from a hash made by it.
@@ -989,5 +1001,6 @@ struct Date[
         Returns:
             Self.
         """
+        var zone = tz.value()[] if tz else Self._tz()
         var d = calendar.from_hash[_cal_hash](int(value))
-        return Self(d[0], d[1], d[2], tz, calendar)
+        return Self(d[0], d[1], d[2], zone, calendar)
