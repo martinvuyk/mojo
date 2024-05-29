@@ -63,7 +63,7 @@ struct ListLiteral[*Ts: Movable](Sized, Movable):
         return len(self.storage)
 
     @always_inline("nodebug")
-    fn get[i: Int, T: Movable](self) -> T:
+    fn get[i: Int, T: Movable](self) -> ref [__lifetime_of(self)] T:
         """Get a list element at the given index.
 
         Parameters:
@@ -73,7 +73,9 @@ struct ListLiteral[*Ts: Movable](Sized, Movable):
         Returns:
             The element at the given index.
         """
-        return rebind[T](self.storage[i])
+        return rebind[Reference[T, False, __lifetime_of(self)]](
+            Reference(self.storage[i])
+        )[]
 
 
 # ===----------------------------------------------------------------------===#
@@ -82,7 +84,7 @@ struct ListLiteral[*Ts: Movable](Sized, Movable):
 
 
 @value
-struct _VariadicListIter[type: AnyRegType]:
+struct _VariadicListIter[type: AnyTrivialRegType]:
     """Const Iterator for VariadicList.
 
     Parameters:
@@ -101,7 +103,7 @@ struct _VariadicListIter[type: AnyRegType]:
 
 
 @register_passable("trivial")
-struct VariadicList[type: AnyRegType](Sized):
+struct VariadicList[type: AnyTrivialRegType](Sized):
     """A utility class to access variadic function arguments. Provides a "list"
     view of the function argument so that the size of the argument list and each
     individual argument can be accessed.
@@ -194,7 +196,8 @@ struct _VariadicListMemIter[
         self.index += 1
         # TODO: Need to make this return a dereferenced reference, not a
         # reference that must be deref'd by the user.
-        return self.src[].__getitem__(self.index - 1)
+        # NOTE: Using UnsafePointer here to get lifetimes to match.
+        return UnsafePointer.address_of(self.src[][self.index - 1])[]
 
     fn __len__(self) -> Int:
         return len(self.src[]) - self.index
@@ -355,29 +358,10 @@ struct VariadicListMem[
         """
         return __mlir_op.`pop.variadic.size`(self.value)
 
-    # TODO: Fix for loops + _VariadicListIter to support a __nextref__ protocol
-    # allowing us to get rid of this and make foreach iteration clean.
     @always_inline
-    fn __getitem__(self, idx: Int) -> Self.reference_type:
-        """Gets a single element on the variadic list.
-
-        Args:
-            idx: The index of the element to access on the list.
-
-        Returns:
-            A low-level pointer to the element on the list corresponding to the
-            given index.
-        """
-        return Self.reference_type(
-            __mlir_op.`pop.variadic.get`(self.value, idx.value)
-        )
-
-    @always_inline
-    fn __refitem__(
+    fn __getitem__(
         self, idx: Int
-    ) -> Reference[
-        element_type,
-        Bool {value: elt_is_mutable},
+    ) -> ref [
         _lit_lifetime_union[
             Bool {value: elt_is_mutable},
             lifetime,
@@ -387,8 +371,8 @@ struct VariadicListMem[
             _lit_mut_cast[
                 False, __lifetime_of(self), Bool {value: elt_is_mutable}
             ].result,
-        ].result,
-    ]:
+        ].result
+    ] element_type:
         """Gets a single element on the variadic list.
 
         Args:
@@ -398,7 +382,7 @@ struct VariadicListMem[
             A low-level pointer to the element on the list corresponding to the
             given index.
         """
-        return __mlir_op.`pop.variadic.get`(self.value, idx.value)
+        return Reference(__mlir_op.`pop.variadic.get`(self.value, idx.value))[]
 
     fn __iter__(
         self,
@@ -590,13 +574,9 @@ struct VariadicPack[
         return Self.__len__()
 
     @always_inline
-    fn __refitem__[
+    fn __getitem__[
         index: Int
-    ](self) -> Reference[
-        element_types[index.value],
-        Bool {value: Self.elt_is_mutable},
-        Self.lifetime,
-    ]:
+    ](self) -> ref [Self.lifetime] element_types[index.value]:
         """Return a reference to an element of the pack.
 
         Parameters:
@@ -618,7 +598,7 @@ struct VariadicPack[
             Bool {value: Self.elt_is_mutable},
             Self.lifetime,
         ]
-        return rebind[result_ref._mlir_type](ref_elt)
+        return Reference(rebind[result_ref._mlir_type](ref_elt))[]
 
     @always_inline
     fn each[func: fn[T: element_trait] (T) capturing -> None](self):

@@ -150,11 +150,19 @@ struct Tuple[*element_types: Movable](Sized, Movable):
         return Self.__len__()
 
     @always_inline("nodebug")
-    fn __refitem__[
+    fn __getitem__[
         idx: Int
-    ](self: Reference[Self, _, _]) -> Reference[
-        element_types[idx.value], self.is_mutable, self.lifetime
+    ](self: Reference[Self, _, _]) -> ref [self.lifetime] element_types[
+        idx.value
     ]:
+        """Get a reference to an element in the tuple.
+
+        Parameters:
+            idx: The element to return.
+
+        Returns:
+            A referece to the specified element.
+        """
         # Return a reference to an element at the specified index, propagating
         # mutability of self.
         var storage_kgen_ptr = UnsafePointer.address_of(self[].storage).address
@@ -169,7 +177,7 @@ struct Tuple[*element_types: Movable](Sized, Movable):
     # TODO(#38268): Remove this method when references and parameter expressions
     # cooperate better.  We can't handle the use in test_simd without this.
     @always_inline("nodebug")
-    fn get[i: Int, T: Movable](self) -> T:
+    fn get[i: Int, T: Movable](self) -> ref [__lifetime_of(self)] T:
         """Get a tuple element and rebind to the specified type.
 
         Parameters:
@@ -179,10 +187,12 @@ struct Tuple[*element_types: Movable](Sized, Movable):
         Returns:
             The tuple element at the requested index.
         """
-        return rebind[T](self[i])
+        return rebind[Reference[T, False, __lifetime_of(self)]](
+            Reference(self[i])
+        )[]
 
     @always_inline("nodebug")
-    fn __contains__[T: ComparableCollectionElement](self, value: T) -> Bool:
+    fn __contains__[T: EqualityComparable](self, value: T) -> Bool:
         """Verify if a given value is present in the tuple.
 
         ```mojo
@@ -195,7 +205,7 @@ struct Tuple[*element_types: Movable](Sized, Movable):
 
         Parameters:
             T: The type of the value argument. Must implement the
-              trait `ComparableCollectionElement`.
+              trait `EqualityComparable`.
 
         Returns:
             True if the value is contained in the tuple, False otherwise.
@@ -220,16 +230,8 @@ struct Tuple[*element_types: Movable](Sized, Movable):
 
             @parameter
             if _type_is_eq[T, element_types[i]]():
-                var tmp_ref = self.__refitem__[i]()
-                var tmp = rebind[
-                    Reference[
-                        T,
-                        tmp_ref.is_mutable,
-                        tmp_ref.lifetime,
-                        tmp_ref.address_space,
-                    ]
-                ](tmp_ref)
-                if tmp[].__eq__(value):
+                var elt_ptr = UnsafePointer.address_of(self[i]).bitcast[T]()
+                if elt_ptr[].__eq__(value):
                     return True
 
         return False

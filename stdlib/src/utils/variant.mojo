@@ -39,7 +39,7 @@ print(to_string(who_knows))
 """
 
 from sys import alignof, sizeof
-from sys.intrinsics import _mlirtype_is_eq
+from sys.intrinsics import _type_is_eq
 
 from memory import UnsafePointer
 from memory.unsafe_pointer import (
@@ -90,7 +90,7 @@ struct _UnionTypeIndex[T: CollectionElement, *Ts: CollectionElement]:
             alias q = Ts[i]
 
             @parameter
-            if _mlirtype_is_eq[q, T]():
+            if _type_is_eq[q, T]():
                 result = i
 
         unroll[each, len(VariadicList(Ts))]()
@@ -210,11 +210,9 @@ struct Variant[*Ts: CollectionElement](CollectionElement):
     # Operator dunders
     # ===-------------------------------------------------------------------===#
 
-    fn __refitem__[
+    fn __getitem__[
         T: CollectionElement
-    ](self: Reference[Self, _, _]) -> Reference[
-        T, self.is_mutable, self.lifetime
-    ]:
+    ](self: Reference[Self, _, _]) -> ref [self.lifetime] T:
         """Get the value out of the variant as a type-checked type.
 
         This explicitly check that your value is of that type!
@@ -233,7 +231,7 @@ struct Variant[*Ts: CollectionElement](CollectionElement):
         if not self[].isa[T]():
             abort("get: wrong variant type")
 
-        return self[].unsafe_get[T]()
+        return self[].unsafe_get[T]()[]
 
     # ===-------------------------------------------------------------------===#
     # Methods

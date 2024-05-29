@@ -10,19 +10,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===----------------------------------------------------------------------=== #
-"""Implements the bit package."""
+"""Implements the tempfile package."""
 
-from .bit import (
-    countl_zero,
-    countr_zero,
-    bit_reverse,
-    byte_swap,
-    pop_count,
-    bit_not,
-    bit_width,
-    rotate_bits_left,
-    rotate_bits_right,
-    has_single_bit,
-    bit_ceil,
-    bit_floor,
-)
+from .tempfile import gettempdir, mkdtemp

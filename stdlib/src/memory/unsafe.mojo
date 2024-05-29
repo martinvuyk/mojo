@@ -162,7 +162,7 @@ alias Pointer = LegacyPointer
 @value
 @register_passable("trivial")
 struct LegacyPointer[
-    type: AnyRegType, address_space: AddressSpace = AddressSpace.GENERIC
+    type: AnyTrivialRegType, address_space: AddressSpace = AddressSpace.GENERIC
 ](Boolable, CollectionElement, Intable, Stringable, EqualityComparable):
     """Defines a LegacyPointer struct that contains the address of a register passable
     type.
@@ -272,33 +272,39 @@ struct LegacyPointer[
         Returns:
             A LegacyPointer struct which contains the address of the argument.
         """
-        # Work around AnyRegType vs AnyType.
+        # Work around AnyTrivialRegType vs AnyType.
         return __mlir_op.`pop.pointer.bitcast`[_type = Self._mlir_type](
             UnsafePointer(arg).address
         )
 
     @always_inline("nodebug")
-    fn __refitem__(self) -> Self._ref_type:
-        """Enable subscript syntax `ref[]` to access the element.
+    fn __getitem__(
+        self,
+    ) -> ref [MutableStaticLifetime, address_space._value.value] type:
+        """Enable subscript syntax `ptr[]` to access the element.
 
         Returns:
-            The MLIR reference for the Mojo compiler to use.
+            The reference for the Mojo compiler to use.
         """
-        return __mlir_op.`lit.ref.from_pointer`[
-            _type = Self._ref_type._mlir_type
-        ](self.address)
+        return __get_litref_as_mvalue(
+            __mlir_op.`lit.ref.from_pointer`[_type = Self._ref_type._mlir_type](
+                self.address
+            )
+        )
 
     @always_inline("nodebug")
-    fn __refitem__(self, offset: Int) -> Self._ref_type:
-        """Enable subscript syntax `ref[idx]` to access the element.
+    fn __getitem__(
+        self, offset: Int
+    ) -> ref [MutableStaticLifetime, address_space._value.value] type:
+        """Enable subscript syntax `ptr[idx]` to access the element.
 
         Args:
             offset: The offset to load from.
 
         Returns:
-            The MLIR reference for the Mojo compiler to use.
+            The reference for the Mojo compiler to use.
         """
-        return (self + offset).__refitem__()
+        return (self + offset)[]
 
     # ===------------------------------------------------------------------=== #
     # Load/Store
@@ -447,7 +453,7 @@ struct LegacyPointer[
 
     @always_inline("nodebug")
     fn bitcast[
-        new_type: AnyRegType = type,
+        new_type: AnyTrivialRegType = type,
         /,
         address_space: AddressSpace = Self.address_space,
     ](self) -> LegacyPointer[new_type, address_space]:
