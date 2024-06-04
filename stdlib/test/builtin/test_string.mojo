@@ -10,8 +10,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===----------------------------------------------------------------------=== #
-# RUN: %mojo %s
+# RUN: %bare-mojo %s
 
+# TODO: Replace %bare-mojo with %mojo
+# when  https://github.com/modularml/mojo/issues/2751 is fixed.
 from builtin.string import (
     _calc_initial_buffer_size_int32,
     _calc_initial_buffer_size_int64,
@@ -26,6 +28,7 @@ from testing import (
 )
 
 from utils import StringRef
+from python import Python
 
 
 @value
@@ -89,6 +92,11 @@ fn test_constructors() raises:
     ptr[3] = 0
     var s3 = String(ptr, 4)
     assert_equal(s3, "abc")
+
+    # Construction from PythonObject
+    var py = Python.evaluate("1 + 1")
+    var s4 = String(py)
+    assert_equal(s4, "2")
 
 
 fn test_copy() raises:
@@ -605,7 +613,8 @@ fn test_split() raises:
     # empty separators default to whitespace
     var d = String("hello world").split()
     assert_true(len(d) == 2)
-    assert_true(d[0] == "hello", d[1] == "world")
+    assert_true(d[0] == "hello")
+    assert_true(d[1] == "world")
     d = String("hello \t\n\n\v\fworld").split("\n")
     assert_true(len(d) == 3)
     assert_true(d[0] == "hello \t" and d[1] == "" and d[2] == "\v\fworld")
@@ -681,6 +690,88 @@ fn test_split() raises:
     assert_equal(len(res4), 2)
     assert_equal(res4[0], "he")
     assert_equal(res4[1], "o")
+
+
+fn test_splitlines() raises:
+    # Test with no line breaks
+    var in1 = String("hello world")
+    var res1 = in1.splitlines()
+    assert_equal(len(res1), 1)
+    assert_equal(res1[0], "hello world")
+
+    # Test with \n line break
+    var in2 = String("hello\nworld")
+    var res2 = in2.splitlines()
+    assert_equal(len(res2), 2)
+    assert_equal(res2[0], "hello")
+    assert_equal(res2[1], "world")
+
+    # Test with \r\n line break
+    var in3 = String("hello\r\nworld")
+    var res3 = in3.splitlines()
+    assert_equal(len(res3), 2)
+    assert_equal(res3[0], "hello")
+    assert_equal(res3[1], "world")
+
+    # Test with \r line break
+    var in4 = String("hello\rworld")
+    var res4 = in4.splitlines()
+    assert_equal(len(res4), 2)
+    assert_equal(res4[0], "hello")
+    assert_equal(res4[1], "world")
+
+    # Test with multiple different line breaks
+    var in5 = String("hello\nworld\r\nmojo\rlanguage")
+    var res5 = in5.splitlines()
+    assert_equal(len(res5), 4)
+    assert_equal(res5[0], "hello")
+    assert_equal(res5[1], "world")
+    assert_equal(res5[2], "mojo")
+    assert_equal(res5[3], "language")
+
+    # Test with keepends=True
+    var res6 = in5.splitlines(keepends=True)
+    assert_equal(len(res6), 4)
+    assert_equal(res6[0], "hello\n")
+    assert_equal(res6[1], "world\r\n")
+    assert_equal(res6[2], "mojo\r")
+    assert_equal(res6[3], "language")
+
+    # Test with an empty string
+    var in7 = String("")
+    var res7 = in7.splitlines()
+    assert_equal(len(res7), 0)
+
+    # test \v \f \x1c \x1d
+    var in8 = String("hello\vworld\fmojo\x1clanguage\x1d")
+    var res8 = in8.splitlines()
+    assert_equal(len(res8), 4)
+    assert_equal(res8[0], "hello")
+    assert_equal(res8[1], "world")
+    assert_equal(res8[2], "mojo")
+    assert_equal(res8[3], "language")
+
+    # test \x1e \x85
+    var in9 = String("hello\x1eworld\x85mojo")
+    var res9 = in9.splitlines()
+    assert_equal(len(res9), 3)
+    assert_equal(res9[0], "hello")
+    assert_equal(res9[1], "world")
+    assert_equal(res9[2], "mojo")
+
+    # test with keepends=True
+    var res10 = in8.splitlines(keepends=True)
+    assert_equal(len(res10), 4)
+    assert_equal(res10[0], "hello\v")
+    assert_equal(res10[1], "world\f")
+    assert_equal(res10[2], "mojo\x1c")
+    assert_equal(res10[3], "language\x1d")
+
+    var res11 = in9.splitlines(keepends=True)
+    assert_equal(len(res11), 3)
+    assert_equal(res11[0], "hello\x1e")
+    assert_equal(res11[1], "world\x85")
+    assert_equal(res11[2], "mojo")
 
 
 fn test_isupper() raises:
@@ -898,27 +989,44 @@ fn test_strip() raises:
     # with default strip chars
     var empty_string = String("")
     assert_true(empty_string.strip() == "")
+    alias comp_empty_string_stripped = String("").strip()
+    assert_true(comp_empty_string_stripped == "")
 
     var space_string = String(" \t\n\r\v\f  ")
     assert_true(space_string.strip() == "")
+    alias comp_space_string_stripped = String(" \t\n\r\v\f  ").strip()
+    assert_true(comp_space_string_stripped == "")
 
     var str0 = String("     n ")
     assert_true(str0.strip() == "n")
+    alias comp_str0_stripped = String("     n ").strip()
+    assert_true(comp_str0_stripped == "n")
 
     var str1 = String("string")
     assert_true(str1.strip() == "string")
+    alias comp_str1_stripped = String("string").strip()
+    assert_true(comp_str1_stripped == "string")
 
     var str2 = String(" \t\n\t\v\fsomething \t\n\t\v\f")
+    alias comp_str2_stripped = String(" \t\n\t\v\fsomething \t\n\t\v\f").strip()
     assert_true(str2.strip() == "something")
+    assert_true(comp_str2_stripped == "something")
 
     # with custom strip chars
     var str3 = String("mississippi")
     assert_true(str3.strip("mips") == "")
     assert_true(str3.strip("mip") == "ssiss")
+    alias comp_str3_stripped = String("mississippi").strip("mips")
+    assert_true(comp_str3_stripped == "")
 
     var str4 = String(" \n mississippimississippi \n ")
     assert_true(str4.strip(" ") == "\n mississippimississippi \n")
     assert_true(str4.strip("\nmip ") == "ssissippimississ")
+
+    alias comp_str4_stripped = String(" \n mississippimississippi \n ").strip(
+        " "
+    )
+    assert_true(comp_str4_stripped == "\n mississippimississippi \n")
 
 
 fn test_hash() raises:
@@ -1025,6 +1133,7 @@ def main():
     test_replace()
     test_rfind()
     test_split()
+    test_splitlines()
     test_isupper()
     test_islower()
     test_lower()
