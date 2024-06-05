@@ -1349,7 +1349,7 @@ struct DateTime[
                 p[0], p[1], p[2], p[3], p[4], p[5], tz=p[6], calendar=calendar
             )
             if tz:
-                var t = tz.value()[]
+                var t = tz.value()
                 if t != dt.tz:
                     return dt.to_utc().from_utc(t)
             return dt

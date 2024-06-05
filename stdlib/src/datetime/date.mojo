@@ -132,7 +132,7 @@ struct Date[
             tz: Tz.
             calendar: Calendar.
         """
-        var zone = tz.value()[] if tz else Self._tz()
+        var zone = tz.value() if tz else Self._tz()
         self.year = int(year.take()) if year else int(calendar.min_year)
         self.month = int(month.take()) if month else int(calendar.min_month)
         self.day = int(day.take()) if day else int(calendar.min_day)
@@ -148,7 +148,7 @@ struct Date[
         calendar: Calendar = _calendar,
     ) -> Self:
         """Construct a `Date` from possibly overflowing values."""
-        var zone = tz.value()[] if tz else Self._tz()
+        var zone = tz.value() if tz else Self._tz()
         var d = Self._from_days(days, zone, calendar)
         var mon = Self._from_months(months, zone, calendar)
         var y = Self._from_years(years, zone, calendar)
@@ -701,7 +701,7 @@ struct Date[
         calendar: Calendar = _calendar,
     ) -> Self:
         """Construct a `Date` from years."""
-        var zone = tz.value()[] if tz else Self._tz()
+        var zone = tz.value() if tz else Self._tz()
         var delta = int(calendar.max_year) - years
         if delta > 0:
             if years > int(calendar.min_year):
@@ -716,7 +716,7 @@ struct Date[
         calendar: Calendar = _calendar,
     ) -> Self:
         """Construct a `Date` from months."""
-        var zone = tz.value()[] if tz else Self._tz()
+        var zone = tz.value() if tz else Self._tz()
         if months <= int(calendar.max_month):
             return Self(month=months, tz=zone, calendar=calendar)
         var y = months // int(calendar.max_month)
@@ -734,7 +734,7 @@ struct Date[
         calendar: Calendar = _calendar,
     ) -> Self:
         """Construct a `Date` from days."""
-        var zone = tz.value()[] if tz else Self._tz()
+        var zone = tz.value() if tz else Self._tz()
         var minyear = int(calendar.min_year)
         var dt = Self(minyear, tz=zone, calendar=calendar)
         var maxtdays = int(calendar.max_typical_days_in_year)
@@ -771,7 +771,7 @@ struct Date[
         calendar: Calendar = _calendar,
     ) -> Self:
         """Construct a `Date` from hours."""
-        var zone = tz.value()[] if tz else Self._tz()
+        var zone = tz.value() if tz else Self._tz()
         var h = int(calendar.max_hour)
         if hours <= h:
             return Self(int(calendar.min_year), tz=zone, calendar=calendar)
@@ -787,7 +787,7 @@ struct Date[
         calendar: Calendar = _calendar,
     ) -> Self:
         """Construct a `Date` from minutes."""
-        var zone = tz.value()[] if tz else Self._tz()
+        var zone = tz.value() if tz else Self._tz()
         var m = int(calendar.max_minute)
         if minutes < m:
             return Self(int(calendar.min_year), tz=zone, calendar=calendar)
@@ -816,7 +816,7 @@ struct Date[
         Returns:
             Self.
         """
-        var zone = tz.value()[] if tz else Self._tz()
+        var zone = tz.value() if tz else Self._tz()
         var minutes = seconds // (int(calendar.max_typical_second) + 1)
         var dt = Self._from_minutes(minutes, zone, calendar)
         if not add_leap:
@@ -852,7 +852,7 @@ struct Date[
         Returns:
             Self.
         """
-        var zone = tz.value()[] if tz else Self._tz()
+        var zone = tz.value() if tz else Self._tz()
         return Self.from_seconds[add_leap](
             seconds, tz=zone, calendar=UTCCalendar
         )
@@ -870,7 +870,7 @@ struct Date[
         Returns:
             Self.
         """
-        var zone = tz.value()[] if tz else Self._tz()
+        var zone = tz.value() if tz else Self._tz()
         var s = time.now() // 1_000_000_000
         return Date.from_unix_epoch(s, zone).replace(calendar=calendar)
 
@@ -940,7 +940,7 @@ struct Date[
         Returns:
             An Optional Self.
         """
-        var zone = tz.value()[] if tz else Self._tz()
+        var zone = tz.value() if tz else Self._tz()
         var parsed = dt_str.strptime[format_str](s)
         if not parsed:
             return None
@@ -978,7 +978,7 @@ struct Date[
             ](s)
             var dt = Self(p[0], p[1], p[2], tz=p[6], calendar=calendar)
             if tz:
-                var t = tz.value()[]
+                var t = tz.value()
                 if t != dt.tz:
                     return dt.to_utc().from_utc(t)
             return dt
@@ -1001,6 +1001,6 @@ struct Date[
         Returns:
             Self.
         """
-        var zone = tz.value()[] if tz else Self._tz()
+        var zone = tz.value() if tz else Self._tz()
         var d = calendar.from_hash[_cal_hash](int(value))
         return Self(d[0], d[1], d[2], zone, calendar)

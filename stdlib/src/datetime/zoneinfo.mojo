@@ -314,7 +314,7 @@ struct ZoneInfoFile32(CollectionElement):
     fn __init__(inout self):
         """Construct a `ZoneInfoFile`."""
         try:
-            self._file = Path(cwd()) / "zoneinfo_dump"
+            self._file = cwd() / "zoneinfo_dump"
         except:
             self._file = Path(".") / "zoneinfo_dump"
 
@@ -328,7 +328,15 @@ struct ZoneInfoFile32(CollectionElement):
         try:
             with open(self._file, "wb") as f:
                 _ = f.seek(hash(key) * 32)
-                f.write(value.buf)
+                # FIXME: this is horrible
+                var items = List[UInt8](
+                    UInt8(value.buf[0]),
+                    UInt8(value.buf[1]),
+                    UInt8(value.buf[2]),
+                    UInt8(value.buf[3]),
+                    0,
+                )
+                f.write(String(items))
         except:
             # TODO: propper logging
             print("could not save zoneinfo to file")
@@ -382,7 +390,7 @@ struct ZoneInfoFile8(CollectionElement):
     fn __init__(inout self):
         """Construct a `ZoneInfoFile`."""
         try:
-            self._file = Path(cwd()) / "zoneinfo_dump"
+            self._file = cwd() / "zoneinfo_dump"
         except:
             self._file = "./zoneinfo_dump"
 
@@ -397,7 +405,8 @@ struct ZoneInfoFile8(CollectionElement):
         try:
             with open(self._file, "wb") as f:
                 _ = f.seek(index * 8)
-                f.write(value.buf)
+                # FIXME: this is horrible
+                f.write(String(List[UInt8](value.buf, 0)))
         except:
             # TODO: propper logging
             print("could not save zoneinfo to file")

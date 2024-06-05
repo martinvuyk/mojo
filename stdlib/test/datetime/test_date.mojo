@@ -221,32 +221,32 @@ fn test_iso() raises:
     var ref1 = date(1970, 1, 1, tz_0_, pycal)
     var iso_str = "1970-01-01T00:00:00+00:00"
     alias fmt1 = IsoFormat(IsoFormat.YYYY_MM_DD_T_HH_MM_SS_TZD)
-    assert_true(ref1 == date.from_iso[fmt1](iso_str).value()[])
+    assert_true(ref1 == date.from_iso[fmt1](iso_str).value())
     assert_equal(iso_str, ref1.to_iso[fmt1]())
 
     iso_str = "1970-01-01 00:00:00+00:00"
     alias fmt2 = IsoFormat(IsoFormat.YYYY_MM_DD___HH_MM_SS)
-    assert_true(ref1 == date.from_iso[fmt2](iso_str).value()[])
+    assert_true(ref1 == date.from_iso[fmt2](iso_str).value())
     assert_equal(iso_str, ref1.to_iso[fmt2]())
 
     iso_str = "1970-01-01T00:00:00"
     alias fmt3 = IsoFormat(IsoFormat.YYYY_MM_DD_T_HH_MM_SS)
-    assert_true(ref1 == date.from_iso[fmt3](iso_str).value()[])
+    assert_true(ref1 == date.from_iso[fmt3](iso_str).value())
     assert_equal(iso_str, ref1.to_iso[fmt3]())
 
     iso_str = "19700101000000"
     alias fmt4 = IsoFormat(IsoFormat.YYYYMMDDHHMMSS)
-    assert_true(ref1 == date.from_iso[fmt4](iso_str).value()[])
+    assert_true(ref1 == date.from_iso[fmt4](iso_str).value())
     assert_equal(iso_str, ref1.to_iso[fmt4]())
 
     iso_str = "00:00:00"
     alias fmt5 = IsoFormat(IsoFormat.HH_MM_SS)
-    assert_true(ref1 == date.from_iso[fmt5](iso_str).value()[])
+    assert_true(ref1 == date.from_iso[fmt5](iso_str).value())
     assert_equal(iso_str, ref1.to_iso[fmt5]())
 
     iso_str = "000000"
     alias fmt6 = IsoFormat(IsoFormat.HHMMSS)
-    assert_true(ref1 == date.from_iso[fmt6](iso_str).value()[])
+    assert_true(ref1 == date.from_iso[fmt6](iso_str).value())
     assert_equal(iso_str, ref1.to_iso[fmt6]())
 
 

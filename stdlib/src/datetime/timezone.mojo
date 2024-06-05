@@ -133,7 +133,7 @@ struct TimeZone[
 
         @parameter
         if iana:
-            var zi = z.value()[]
+            var zi = z.value()
             if has_dst:
                 var dst = zi.with_dst.get(tz_str)
                 if not dst:
@@ -303,8 +303,8 @@ struct TimeZone[
                 ss = d.sign
 
         var sign = "+" if ss == 1 else "-"
-        var hh = h if h > 9 else "0" + str(h)
-        var mm = m if m > 9 else "0" + str(m)
+        var hh = str(h) if h > 9 else "0" + str(h)
+        var mm = str(m) if m > 9 else "0" + str(m)
         return sign + hh + ":" + mm
 
     @staticmethod
