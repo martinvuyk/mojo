@@ -119,7 +119,7 @@ struct CalendarHashes:
             or selected == self.UINT16
             or selected == self.UINT32
             or selected == self.UINT64,
-            msg="there is no such hash size",
+            "there is no such hash size",
         )
         self.selected = selected
 
@@ -231,7 +231,7 @@ trait _Calendarized:
 
 @value
 # @register_passable("trivial")
-struct Calendar(_Calendarized):
+struct Calendar:
     """`Calendar` interface."""
 
     var max_year: UInt16
@@ -277,7 +277,7 @@ struct Calendar(_Calendarized):
     alias _monthdays = List[UInt8]()
     """An array with the amount of days each month contains without 
     leap values. It's assumed that `len(monthdays) == max_month`."""
-    var _implementation: Gregorian
+    var _implementation: Variant[Gregorian, UTCFast]
 
     fn __init__(
         inout self, owned impl: Variant[Gregorian, UTCFast] = Gregorian()
@@ -287,28 +287,53 @@ struct Calendar(_Calendarized):
         Args:
             impl: Calendar implementation.
         """
-        var imp = impl.unsafe_take[Gregorian]()
-        self.max_year = imp.max_year
-        self.max_typical_days_in_year = imp.max_typical_days_in_year
-        self.max_possible_days_in_year = imp.max_possible_days_in_year
-        self.max_month = imp.max_month
-        self.max_hour = imp.max_hour
-        self.max_minute = imp.max_minute
-        self.max_typical_second = imp.max_typical_second
-        self.max_possible_second = imp.max_possible_second
-        self.max_milisecond = imp.max_milisecond
-        self.max_microsecond = imp.max_microsecond
-        self.max_nanosecond = imp.max_nanosecond
-        self.min_year = imp.min_year
-        self.min_month = imp.min_month
-        self.min_day = imp.min_day
-        self.min_hour = imp.min_hour
-        self.min_minute = imp.min_minute
-        self.min_second = imp.min_second
-        self.min_milisecond = imp.min_milisecond
-        self.min_microsecond = imp.min_microsecond
-        self.min_nanosecond = imp.min_nanosecond
-        self._implementation = imp
+
+        if impl.isa[Gregorian]():
+            var imp = impl.unsafe_take[Gregorian]()
+            self.max_year = imp.max_year
+            self.max_typical_days_in_year = imp.max_typical_days_in_year
+            self.max_possible_days_in_year = imp.max_possible_days_in_year
+            self.max_month = imp.max_month
+            self.max_hour = imp.max_hour
+            self.max_minute = imp.max_minute
+            self.max_typical_second = imp.max_typical_second
+            self.max_possible_second = imp.max_possible_second
+            self.max_milisecond = imp.max_milisecond
+            self.max_microsecond = imp.max_microsecond
+            self.max_nanosecond = imp.max_nanosecond
+            self.min_year = imp.min_year
+            self.min_month = imp.min_month
+            self.min_day = imp.min_day
+            self.min_hour = imp.min_hour
+            self.min_minute = imp.min_minute
+            self.min_second = imp.min_second
+            self.min_milisecond = imp.min_milisecond
+            self.min_microsecond = imp.min_microsecond
+            self.min_nanosecond = imp.min_nanosecond
+            self._implementation = imp
+        else:  # elif impl.isa[UTCFast]():
+            var imp = impl.unsafe_take[UTCFast]()
+            self.max_year = imp.max_year
+            self.max_typical_days_in_year = imp.max_typical_days_in_year
+            self.max_possible_days_in_year = imp.max_possible_days_in_year
+            self.max_month = imp.max_month
+            self.max_hour = imp.max_hour
+            self.max_minute = imp.max_minute
+            self.max_typical_second = imp.max_typical_second
+            self.max_possible_second = imp.max_possible_second
+            self.max_milisecond = imp.max_milisecond
+            self.max_microsecond = imp.max_microsecond
+            self.max_nanosecond = imp.max_nanosecond
+            self.min_year = imp.min_year
+            self.min_month = imp.min_month
+            self.min_day = imp.min_day
+            self.min_hour = imp.min_hour
+            self.min_minute = imp.min_minute
+            self.min_second = imp.min_second
+            self.min_milisecond = imp.min_milisecond
+            self.min_microsecond = imp.min_microsecond
+            self.min_nanosecond = imp.min_nanosecond
+            self._implementation = imp
 
     @always_inline("nodebug")
     fn dayofweek(self, year: UInt16, month: UInt8, day: UInt8) -> UInt8:
@@ -322,7 +347,16 @@ struct Calendar(_Calendarized):
         Returns:
             - day: Day of the week: [0, 6] (monday - sunday).
         """
-        return self._implementation.dayofweek(year, month, day)
+        if self._implementation.isa[Gregorian]():
+            return self._implementation.unsafe_get[Gregorian]()[].dayofweek(
+                year, month, day
+            )
+        elif self._implementation.isa[UTCFast]():
+            return self._implementation.unsafe_get[UTCFast]()[].dayofweek(
+                year, month, day
+            )
+        else:
+            return 0
 
     @always_inline("nodebug")
     fn dayofyear(self, year: UInt16, month: UInt8, day: UInt8) -> UInt16:
@@ -336,7 +370,16 @@ struct Calendar(_Calendarized):
         Returns:
             - day: Day of the year: [1, 366] (for gregorian calendar).
         """
-        return self._implementation.dayofyear(year, month, day)
+        if self._implementation.isa[Gregorian]():
+            return self._implementation.unsafe_get[Gregorian]()[].dayofyear(
+                year, month, day
+            )
+        elif self._implementation.isa[UTCFast]():
+            return self._implementation.unsafe_get[UTCFast]()[].dayofyear(
+                year, month, day
+            )
+        else:
+            return 0
 
     @always_inline("nodebug")
     fn max_days_in_month(self, year: UInt16, month: UInt8) -> UInt8:
@@ -349,7 +392,16 @@ struct Calendar(_Calendarized):
         Returns:
             The amount of days.
         """
-        return self._implementation.max_days_in_month(year, month)
+        if self._implementation.isa[Gregorian]():
+            return self._implementation.unsafe_get[
+                Gregorian
+            ]()[].max_days_in_month(year, month)
+        elif self._implementation.isa[UTCFast]():
+            return self._implementation.unsafe_get[
+                UTCFast
+            ]()[].max_days_in_month(year, month)
+        else:
+            return 0
 
     @always_inline("nodebug")
     fn monthrange(self, year: UInt16, month: UInt8) -> (UInt8, UInt8):
@@ -364,7 +416,16 @@ struct Calendar(_Calendarized):
             - dayofweek: Day of the week.
             - dayofmonth: Day of the month.
         """
-        return self._implementation.monthrange(year, month)
+        if self._implementation.isa[Gregorian]():
+            return self._implementation.unsafe_get[Gregorian]()[].monthrange(
+                year, month
+            )
+        elif self._implementation.isa[UTCFast]():
+            return self._implementation.unsafe_get[UTCFast]()[].monthrange(
+                year, month
+            )
+        else:
+            return UInt8(0), UInt8(0)
 
     @always_inline("nodebug")
     fn max_second(
@@ -382,7 +443,16 @@ struct Calendar(_Calendarized):
         Returns:
             The amount.
         """
-        return self._implementation.max_second(year, month, day, hour, minute)
+        if self._implementation.isa[Gregorian]():
+            return self._implementation.unsafe_get[Gregorian]()[].max_second(
+                year, month, day, hour, minute
+            )
+        elif self._implementation.isa[UTCFast]():
+            return self._implementation.unsafe_get[UTCFast]()[].max_second(
+                year, month, day, hour, minute
+            )
+        else:
+            return 0
 
     @always_inline("nodebug")
     fn is_leapyear(self, year: UInt16) -> Bool:
@@ -394,7 +464,16 @@ struct Calendar(_Calendarized):
         Returns:
             Bool.
         """
-        return self._implementation.is_leapyear(year)
+        if self._implementation.isa[Gregorian]():
+            return self._implementation.unsafe_get[Gregorian]()[].is_leapyear(
+                year
+            )
+        elif self._implementation.isa[UTCFast]():
+            return self._implementation.unsafe_get[UTCFast]()[].is_leapyear(
+                year
+            )
+        else:
+            return 0
 
     @always_inline("nodebug")
     fn is_leapsec(
@@ -419,9 +498,16 @@ struct Calendar(_Calendarized):
         Returns:
             Bool.
         """
-        return self._implementation.is_leapsec(
-            year, month, day, hour, minute, second
-        )
+        if self._implementation.isa[Gregorian]():
+            return self._implementation.unsafe_get[Gregorian]()[].is_leapsec(
+                year, month, day, hour, minute, second
+            )
+        elif self._implementation.isa[UTCFast]():
+            return self._implementation.unsafe_get[UTCFast]()[].is_leapsec(
+                year, month, day, hour, minute, second
+            )
+        else:
+            return 0
 
     @always_inline("nodebug")
     fn leapsecs_since_epoch(
@@ -437,7 +523,16 @@ struct Calendar(_Calendarized):
         Returns:
             The amount.
         """
-        return self._implementation.leapsecs_since_epoch(year, month, day)
+        if self._implementation.isa[Gregorian]():
+            return self._implementation.unsafe_get[
+                Gregorian
+            ]()[].leapsecs_since_epoch(year, month, day)
+        elif self._implementation.isa[UTCFast]():
+            return self._implementation.unsafe_get[
+                UTCFast
+            ]()[].leapsecs_since_epoch(year, month, day)
+        else:
+            return 0
 
     @always_inline("nodebug")
     fn leapdays_since_epoch(
@@ -453,7 +548,16 @@ struct Calendar(_Calendarized):
         Returns:
             The amount.
         """
-        return self._implementation.leapdays_since_epoch(year, month, day)
+        if self._implementation.isa[Gregorian]():
+            return self._implementation.unsafe_get[
+                Gregorian
+            ]()[].leapdays_since_epoch(year, month, day)
+        elif self._implementation.isa[UTCFast]():
+            return self._implementation.unsafe_get[
+                UTCFast
+            ]()[].leapdays_since_epoch(year, month, day)
+        else:
+            return 0
 
     @always_inline("nodebug")
     fn seconds_since_epoch(
@@ -478,9 +582,16 @@ struct Calendar(_Calendarized):
         Returns:
             The amount.
         """
-        return self._implementation.seconds_since_epoch(
-            year, month, day, hour, minute, second
-        )
+        if self._implementation.isa[Gregorian]():
+            return self._implementation.unsafe_get[
+                Gregorian
+            ]()[].seconds_since_epoch(year, month, day, hour, minute, second)
+        elif self._implementation.isa[UTCFast]():
+            return self._implementation.unsafe_get[
+                UTCFast
+            ]()[].seconds_since_epoch(year, month, day, hour, minute, second)
+        else:
+            return 0
 
     @always_inline("nodebug")
     fn m_seconds_since_epoch(
@@ -507,9 +618,20 @@ struct Calendar(_Calendarized):
         Returns:
             The amount.
         """
-        return self._implementation.m_seconds_since_epoch(
-            year, month, day, hour, minute, second, m_second
-        )
+        if self._implementation.isa[Gregorian]():
+            return self._implementation.unsafe_get[
+                Gregorian
+            ]()[].m_seconds_since_epoch(
+                year, month, day, hour, minute, second, m_second
+            )
+        elif self._implementation.isa[UTCFast]():
+            return self._implementation.unsafe_get[
+                UTCFast
+            ]()[].m_seconds_since_epoch(
+                year, month, day, hour, minute, second, m_second
+            )
+        else:
+            return 0
 
     @always_inline("nodebug")
     fn n_seconds_since_epoch(
@@ -541,13 +663,39 @@ struct Calendar(_Calendarized):
         Returns:
             The amount.
         """
-        return self._implementation.n_seconds_since_epoch(
-            year, month, day, hour, minute, second, m_second, u_second, n_second
-        )
+        if self._implementation.isa[Gregorian]():
+            return self._implementation.unsafe_get[
+                Gregorian
+            ]()[].n_seconds_since_epoch(
+                year,
+                month,
+                day,
+                hour,
+                minute,
+                second,
+                m_second,
+                u_second,
+                n_second,
+            )
+        elif self._implementation.isa[UTCFast]():
+            return self._implementation.unsafe_get[
+                UTCFast
+            ]()[].n_seconds_since_epoch(
+                year,
+                month,
+                day,
+                hour,
+                minute,
+                second,
+                m_second,
+                u_second,
+                n_second,
+            )
+        else:
+            return 0
 
-    @staticmethod
     @always_inline("nodebug")
-    fn from_year(year: UInt16) -> Self:
+    fn from_year(self, year: UInt16) -> Self:
         """Get a Calendar with min_year=year.
 
         Args:
@@ -556,7 +704,13 @@ struct Calendar(_Calendarized):
         Returns:
             Self.
         """
-        return Calendar.from_year[Gregorian](year)
+
+        if self._implementation.isa[Gregorian]():
+            return Calendar.from_year[Gregorian](year)
+        elif self._implementation.isa[UTCFast]():
+            return Calendar.from_year[UTCFast](year)
+        else:
+            return 0
 
     @staticmethod
     @always_inline("nodebug")
@@ -574,6 +728,8 @@ struct Calendar(_Calendarized):
         Returns:
             Self.
         """
+
+        @parameter
         if T.isa[Gregorian]():
             return Self(Gregorian().from_year(year))
         elif T.isa[UTCFast]():
@@ -615,9 +771,34 @@ struct Calendar(_Calendarized):
         Returns:
             The hash.
         """
-        return self._implementation.hash[cal_hash](
-            year, month, day, hour, minute, second, m_second, u_second, n_second
-        )
+        if self._implementation.isa[Gregorian]():
+            return self._implementation.unsafe_get[Gregorian]()[].hash[
+                cal_hash
+            ](
+                year,
+                month,
+                day,
+                hour,
+                minute,
+                second,
+                m_second,
+                u_second,
+                n_second,
+            )
+        elif self._implementation.isa[UTCFast]():
+            return self._implementation.unsafe_get[UTCFast]()[].hash[cal_hash](
+                year,
+                month,
+                day,
+                hour,
+                minute,
+                second,
+                m_second,
+                u_second,
+                n_second,
+            )
+        else:
+            return 0
 
     @always_inline("nodebug")
     fn from_hash[
@@ -634,7 +815,16 @@ struct Calendar(_Calendarized):
         Returns:
             Tuple containing date data.
         """
-        return self._implementation.from_hash[cal_hash](value)
+        if self._implementation.isa[Gregorian]():
+            return self._implementation.unsafe_get[Gregorian]()[].from_hash[
+                cal_hash
+            ](value)
+        elif self._implementation.isa[UTCFast]():
+            return self._implementation.unsafe_get[UTCFast]()[].from_hash[
+                cal_hash
+            ](value)
+        else:
+            return _date(0, 0, 0, 0, 0, 0, 0, 0)
 
 
 @value

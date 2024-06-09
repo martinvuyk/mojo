@@ -120,7 +120,7 @@ struct DateTime64(Hashable, Stringable):
         var h = int(hour.take()) if hour else int(self._calendar.min_hour)
         var m = int(minute.take()) if minute else int(self._calendar.min_minute)
         var s = int(second.take()) if second else int(self._calendar.min_second)
-        var ms = int(m_second.take()) if day else int(
+        var ms = int(m_second.take()) if m_second else int(
             self._calendar.min_milisecond
         )
         self.m_seconds = self._calendar.m_seconds_since_epoch(
@@ -525,14 +525,13 @@ struct DateTime64(Hashable, Stringable):
         Notes:
             This is done assuming the current hash is valid.
         """
-        var s = self
         var time = dt_str.to_iso[iso](
-            int(s.year),
-            int(s.month),
-            int(s.day),
-            int(s.hour),
-            int(s.minute),
-            int(s.second),
+            int(self.year),
+            int(self.month),
+            int(self.day),
+            int(self.hour),
+            int(self.minute),
+            int(self.second),
         )
         return time[:19]
 

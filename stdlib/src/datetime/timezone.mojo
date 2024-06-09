@@ -109,10 +109,8 @@ struct TimeZone[
             and offset_m < 100
             and offset_m >= 0
             and (sign == 1 or sign == -1),
-            msg=(
-                "utc offsets can't have a member bigger than 100, "
-                "and sign must be either 1 or -1"
-            ),
+            "utc offsets can't have a member bigger than 100, ",
+            "and sign must be either 1 or -1",
         )
 
         self.tz_str = tz_str

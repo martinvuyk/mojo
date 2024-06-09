@@ -65,7 +65,7 @@ struct IsoFormat:
             or selected == self.YYYY_MM_DD___HH_MM_SS
             or selected == self.YYYY_MM_DD_T_HH_MM_SS
             or selected == self.YYYY_MM_DD_T_HH_MM_SS_TZD,
-            msg="that ISO8601 string format is not supported yet",
+            "that ISO8601 string format is not supported yet",
         )
         self.selected = selected
 
