@@ -44,14 +44,17 @@ fn make_string[
 
         @parameter
         if length > 0:
-            var items = f.read_bytes(Int(length))
-            i = 0
-            while length > len(items):
-                items.append(items[i])
-                i = i + 1 if i < len(items) - 1 else 0
-            return String(bytes=items)
+            var items = f.read()
+            var data = String(capacity=length + 4)
+            var last_char = Codepoint(0)
+            for c in items.codepoints():
+                data += String(c)
+                last_char = c
+            for _ in range(length - len(items)):
+                data.append(last_char)
+            return data^
         else:
-            return String(bytes=f.read_bytes())
+            return f.read()
     except e:
         print(e, file=stderr)
     return abort[String]()
