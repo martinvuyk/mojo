@@ -165,7 +165,7 @@ fn normalize(value: BFloat16) -> Scalar[DType.uint16]:
     # Normalize bf16 values by flipping the sign bit for positive and fully
     # inverting negative numbers
     var bits = reinterpret(value)
-    alias sign_bit_mask = (0b1 << (bit_width_of[DType.bfloat16]() - 1))
+    alias sign_bit_mask = (0b1 << (DType.bfloat16.bit_width() - 1))
     if bits & sign_bit_mask:
         # For negative numbers, flip all bits (two's complement behavior)
         return ~bits
@@ -493,14 +493,14 @@ struct DoubleBuffer[T: AnyType](ImplicitlyCopyable, Movable):
 
 @always_inline
 fn run_radix_sort_pairs_gpu[
-    type: DType,
+    dtype: DType,
     out_idx_type: DType,
     ascending: Bool = False,
     BLOCK_SIZE: Int = 256,  # found empirically
     NUM_BITS_PER_PASS: Int = 4,
 ](
     ctx: DeviceContext,
-    mut keys: DoubleBuffer[Scalar[type], **_],
+    mut keys: DoubleBuffer[Scalar[dtype], **_],
     mut key_ids: DoubleBuffer[Scalar[out_idx_type], **_],
     skip_sort: UnsafePointer[Scalar[DType.bool]],
     in_shape: IndexList,
@@ -509,9 +509,9 @@ fn run_radix_sort_pairs_gpu[
     var vocab_size = in_shape[1]
 
     @parameter
-    for current_bit in range(0, bit_width_of[type](), NUM_BITS_PER_PASS):
+    for current_bit in range(0, dtype.bit_width(), NUM_BITS_PER_PASS):
         alias kernel = radix_sort_pairs_kernel[
-            type, out_idx_type, current_bit, ascending, BLOCK_SIZE
+            dtype, out_idx_type, current_bit, ascending, BLOCK_SIZE
         ]
 
         ctx.enqueue_function[kernel](
